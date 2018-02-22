@@ -1,0 +1,100 @@
+{
+  "1923": {
+    "id": "1923",
+    "name": "Will McAllister",
+    "big": "",
+    "children": [1992, 2016],
+    "active": false
+  },
+  "1992": {
+    "id": "1992",
+    "name": "Luke Votaw",
+    "big": "1923",
+    "children": [1999, 2036],
+    "active": false
+  },
+  "1999": {
+    "id": "1999",
+    "name": "Kyle Nolan",
+    "big": "1992",
+    "children": [2035, 2046, 2077],
+    "active": true
+  },
+  "2016": {
+    "id": "2016",
+    "name": "Brian Duffy",
+    "big": "1923",
+    "children": [2042, 2052],
+    "active": true
+  },
+  "2035": {
+    "id": "2035",
+    "name": "Chris O'Brien",
+    "big": "1999",
+    "children": [2064],
+    "active": true
+  },
+  "2036": {
+    "id": "2036",
+    "name": "Kevin Polak",
+    "big": "1992",
+    "children": [2057],
+    "active": true
+  },
+  "2042": {
+    "id": "2042",
+    "name": "Eric Salisbury",
+    "big": "2016",
+    "children": [2053],
+    "active": true
+  },
+  "2046": {
+    "id": "2046",
+    "name": "Hartley McGuire",
+    "big": "1999",
+    "children": [2055],
+    "active": true
+  },
+  "2052": {
+    "id": "2052",
+    "name": "Colby Childers",
+    "big": "2016",
+    "children": [],
+    "active": true
+  },
+  "2053": {
+    "id": "2053",
+    "name": "David Mitchell",
+    "big": "2042",
+    "children": [],
+    "active": true
+  },
+  "2055": {
+    "id": "2055",
+    "name": "Jack Bennett",
+    "big": "2046",
+    "children": [],
+    "active": true
+  },
+  "2057": {
+    "id": "2057",
+    "name": "Jaime Paris",
+    "big": "2036",
+    "children": [],
+    "active": true
+  },
+  "2064": {
+    "id": "2064",
+    "name": "Austin Rose",
+    "big": "2035",
+    "children": [],
+    "active": true
+  },
+  "2077": {
+    "id": "2077",
+    "name": "Nico Knutzen",
+    "big": "1999",
+    "children": [],
+    "active": true
+  }
+}
