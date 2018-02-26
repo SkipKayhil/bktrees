@@ -54,6 +54,7 @@ const zoom = d3
   });
 svg.call(zoom).call(zoom.translateTo, 100, svgheight / 2);
 bg.on('mousedown.te', setTranslateExtent);
+bg.on('touchstart.te', setTranslateExtent);
 
 const NODE_WIDTH = 150;
 const NODE_HEIGHT = 50;
