@@ -1,7 +1,20 @@
 window.addEventListener('load', () => {
+  const HIGHEST_BK = 2077;
+
   d3.json('./data/archive.json', (error, data) => {
     const updateData = withData(data);
-    updateData(2046);
+    updateData(HIGHEST_BK);
+
+    document.getElementById('search').addEventListener('submit', e => {
+      e.preventDefault();
+      const search = parseInt(document.getElementById('searchbox').value);
+      // TODO: show some kind of error when the search is invalid
+      console.log(search);
+      if (!Number.isInteger(search)) return;
+      if (search < 1 || search > HIGHEST_BK) return;
+      console.log(search);
+      updateData(search);
+    });
   });
 });
 
