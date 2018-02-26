@@ -39,28 +39,21 @@ const g = svg.append('g').attr('id', 'g');
 const toRemove = svg.append('g').style('opacity', '1');
 //.attr('transform', 'translate(100,' + svgheight / 2 + ') scale(1)');
 
-//console.log(g);
-
 var zoom = d3
   .zoom()
   .scaleExtent([1, 1])
-  //.translateExtent([[svgwidth / 2 - 100, 0], [svgwidth / 2 - 100, 0]])
+  .translateExtent([[-100, svgheight / -2], [svgwidth - 100, svgheight / 2]])
   .on('zoom', () => {
     g.attr('transform', d3.event.transform);
   });
-svg.call(zoom).call(zoom.translateTo, svgwidth / 2 - 100, 0);
-// g.call(zoom.transform, d3.zoomIdentity.);
+svg.call(zoom).call(zoom.translateTo, 100, svgheight / 2);
 
 const nwidth = 150;
 const nheight = 50;
 
 function draw(updateData, data, id) {
-  const addRemoveT = d3
-    .transition()
-    .duration(375)
-    .ease(d3.easeLinear);
-  //.on('end', setTranslateExtent());
-  const updateT = d3
+  console.log('===DRAW CALLED===');
+  const baseT = d3
     .transition()
     .duration(375)
     .ease(d3.easeLinear)
@@ -83,12 +76,12 @@ function draw(updateData, data, id) {
   // Remove exiting links/nodes
   link
     .exit()
-    .transition(addRemoveT)
+    .transition(baseT)
     .style('stroke-opacity', 1e-6)
     .remove();
   node
     .exit()
-    .transition(addRemoveT)
+    .transition(baseT)
     .style('opacity', 1e-6)
     .remove();
 
@@ -107,7 +100,7 @@ function draw(updateData, data, id) {
         .target(d => ({ x: d.target.x, y: d.target.y - nwidth / 2 }))
     )
     .style('stroke-opacity', 1e-6)
-    .transition(addRemoveT)
+    .transition(baseT)
     .style('stroke-opacity', 1);
 
   nodeEnter = node
@@ -121,8 +114,9 @@ function draw(updateData, data, id) {
     .on('click', (d, i) => {
       // Only redraw if necessary
       if (g.select('.selected').data()[0].id === d.id) return;
+      // svg.transition(baseT).call(zoom.translateTo, 100, 0);
       updateData(d.id);
-      //setTranslateExtent();
+      setTranslateExtent();
       // const gheight = document.getElementById('g').getBBox().height;
       // if (gheight < svgheight) {
       //   svg.call(zoom.translateExtent([[0, 0], [0, 0]]));
@@ -130,7 +124,7 @@ function draw(updateData, data, id) {
       // svg.call(zoom.translateExtent([[], []]));
     })
     .style('opacity', 1e-6)
-    .transition(addRemoveT)
+    .transition(baseT)
     .style('opacity', 1);
 
   // node.append("circle")
@@ -162,7 +156,7 @@ function draw(updateData, data, id) {
   // Update positions of old links/nodes
   link
     .style('stroke-opacity', 1)
-    .transition(updateT)
+    .transition(baseT)
     .attr(
       'd',
       d3
@@ -175,27 +169,13 @@ function draw(updateData, data, id) {
   node
     .attr('class', d => getClass('node', d, id))
     .transition(
-      updateT.on('start', () => {
-        svg.transition(updateT).call(zoom.translateTo, svgwidth / 2 - 100, 0);
+      baseT.on('start', () => {
+        svg.transition(baseT).call(zoom.translateTo, 100, 0);
       })
     )
     .attr('transform', d => 'translate(' + d.y + ',' + d.x + ')');
 
   // setTranslateExtent();
-
-  function setTranslateExtent() {
-    const gheight = document.getElementById('g').getBBox().height;
-    if (gheight < svgheight) {
-      console.log('smaller', gheight);
-      zoom.translateExtent([[svgwidth / 2 - 100, 0], [svgwidth / 2 - 100, 0]]);
-    } else {
-      console.log('bigger', gheight);
-      zoom.translateExtent([
-        [svgwidth / 2 - 100, -1 * gheight],
-        [svgwidth / 2 - 100, gheight]
-      ]);
-    }
-  }
 
   function getClass(def, d, id) {
     //console.log(d, id);
@@ -203,4 +183,25 @@ function draw(updateData, data, id) {
     def += d.id == id ? ' selected' : '';
     return def;
   }
+}
+
+function setTranslateExtent() {
+  //TODO format nicer
+  zoom.translateExtent(calcTranslateExtent());
+  // console.log(100, svgheight / 2);
+  // svg.call(zoom.translateTo, 100, 0);
+  //g.call(zoom);
+}
+
+function calcTranslateExtent() {
+  const gwidth = g.node().getBBox().width;
+  const gheight = g.node().getBBox().height;
+  const minY = gheight < svgheight ? svgheight / -2 : -1 * gheight;
+  const maxY = gheight < svgheight ? svgheight / 2 : gheight;
+  const minX = -100;
+  const maxX = gwidth < svgwidth ? svgwidth - 100 : gwidth + 100;
+  console.log('===calcTranslateExtent===');
+  console.log(minX, minY, maxX, maxY);
+  console.log(gheight < svgheight ? 'smaller' : 'bigger', gheight);
+  return [[minX, minY], [maxX, maxY]];
 }
