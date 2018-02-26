@@ -35,11 +35,17 @@ function withData(json) {
 const svg = d3.select('svg');
 const svgwidth = parseInt(svg.style('width'));
 const svgheight = parseInt(svg.style('height'));
+// the blank background is a hack to call setTranslateEvent on mousedown
+const bg = svg
+  .append('rect')
+  .attr('class', 'bg')
+  .attr('width', svgwidth)
+  .attr('height', svgheight);
 const g = svg.append('g').attr('id', 'g');
 const toRemove = svg.append('g').style('opacity', '1');
 //.attr('transform', 'translate(100,' + svgheight / 2 + ') scale(1)');
 
-var zoom = d3
+const zoom = d3
   .zoom()
   .scaleExtent([1, 1])
   .translateExtent([[-100, svgheight / -2], [svgwidth - 100, svgheight / 2]])
@@ -47,24 +53,24 @@ var zoom = d3
     g.attr('transform', d3.event.transform);
   });
 svg.call(zoom).call(zoom.translateTo, 100, svgheight / 2);
+bg.on('mousedown.te', setTranslateExtent);
 
-const nwidth = 150;
-const nheight = 50;
+const NODE_WIDTH = 150;
+const NODE_HEIGHT = 50;
 
 function draw(updateData, data, id) {
   console.log('===DRAW CALLED===');
   const baseT = d3
     .transition()
     .duration(375)
-    .ease(d3.easeLinear)
-    .on('end', setTranslateExtent());
+    .ease(d3.easeLinear);
 
   const root = d3
     .stratify()
     .id(node => node.id)
     .parentId(node => node.big)(data);
 
-  const tree = d3.tree(root).nodeSize([nheight + 10, nwidth + 25]);
+  const tree = d3.tree(root).nodeSize([NODE_HEIGHT + 10, NODE_WIDTH + 25]);
   // .size([svgheight, svgwidth - 200]);
 
   // Get base references
@@ -85,6 +91,39 @@ function draw(updateData, data, id) {
     .style('opacity', 1e-6)
     .remove();
 
+  // // EXPERIMENTAL CODE
+
+  // couldn't get this idea to work, but I want the concept in the git history
+  // in case I want to try again in the future
+
+  // removedLinks = link.exit();
+  // // .remove()
+  // // .on('end', setTranslateExtent);
+  // removedNodes = node.exit();
+  // // .remove()
+  // // .on('end', setTranslateExtent);
+  // console.log(removedLinks, removedNodes);
+  //
+  // // double experimental
+  // removedLinks.each(function() {
+  //   this.remove();
+  // });
+  // removedNodes.each(function() {
+  //   this.remove();
+  // });
+  // setTranslateExtent();
+  //
+  // removedLinks.each(function() {
+  //   //console.log(this);
+  //   toRemove.append(() => this);
+  // });
+  //
+  // removedNodes.each(function() {
+  //   //console.log(this);
+  //   toRemove.append(() => this);
+  // });
+  // //setTranslateExtent();
+
   // Append new elements if the link or node is entering
   linkEnter = link
     .enter()
@@ -96,8 +135,8 @@ function draw(updateData, data, id) {
         .linkHorizontal()
         .x(d => d.y) // define how the x/y values should be gotten from source
         .y(d => d.x) // or target object ie. source/target = {x: x, y: y}
-        .source(d => ({ x: d.source.x, y: d.source.y + nwidth / 2 }))
-        .target(d => ({ x: d.target.x, y: d.target.y - nwidth / 2 }))
+        .source(d => ({ x: d.source.x, y: d.source.y + NODE_WIDTH / 2 }))
+        .target(d => ({ x: d.target.x, y: d.target.y - NODE_WIDTH / 2 }))
     )
     .style('stroke-opacity', 1e-6)
     .transition(baseT)
@@ -114,14 +153,7 @@ function draw(updateData, data, id) {
     .on('click', (d, i) => {
       // Only redraw if necessary
       if (g.select('.selected').data()[0].id === d.id) return;
-      // svg.transition(baseT).call(zoom.translateTo, 100, 0);
       updateData(d.id);
-      setTranslateExtent();
-      // const gheight = document.getElementById('g').getBBox().height;
-      // if (gheight < svgheight) {
-      //   svg.call(zoom.translateExtent([[0, 0], [0, 0]]));
-      // }
-      // svg.call(zoom.translateExtent([[], []]));
     })
     .style('opacity', 1e-6)
     .transition(baseT)
@@ -132,11 +164,11 @@ function draw(updateData, data, id) {
   nodeEnter
     .append('rect')
     //.attr("class", d => getClass("node-rect", d, id))
-    .attr('width', nwidth)
-    .attr('height', nheight)
+    .attr('width', NODE_WIDTH)
+    .attr('height', NODE_HEIGHT)
     .attr(
       'transform',
-      d => 'translate(-' + nwidth / 2 + ', -' + nheight / 2 + ')'
+      d => 'translate(-' + NODE_WIDTH / 2 + ', -' + NODE_HEIGHT / 2 + ')'
     );
 
   nodeEnter
@@ -163,8 +195,8 @@ function draw(updateData, data, id) {
         .linkHorizontal()
         .x(d => d.y) // define how the x/y values should be gotten from source
         .y(d => d.x) // or target object ie. source/target = {x: x, y: y}
-        .source(d => ({ x: d.source.x, y: d.source.y + nwidth / 2 }))
-        .target(d => ({ x: d.target.x, y: d.target.y - nwidth / 2 }))
+        .source(d => ({ x: d.source.x, y: d.source.y + NODE_WIDTH / 2 }))
+        .target(d => ({ x: d.target.x, y: d.target.y - NODE_WIDTH / 2 }))
     );
   node
     .attr('class', d => getClass('node', d, id))
@@ -186,11 +218,7 @@ function draw(updateData, data, id) {
 }
 
 function setTranslateExtent() {
-  //TODO format nicer
   zoom.translateExtent(calcTranslateExtent());
-  // console.log(100, svgheight / 2);
-  // svg.call(zoom.translateTo, 100, 0);
-  //g.call(zoom);
 }
 
 function calcTranslateExtent() {
@@ -199,7 +227,7 @@ function calcTranslateExtent() {
   const minY = gheight < svgheight ? svgheight / -2 : -1 * gheight;
   const maxY = gheight < svgheight ? svgheight / 2 : gheight;
   const minX = -100;
-  const maxX = gwidth < svgwidth ? svgwidth - 100 : gwidth + 100;
+  const maxX = gwidth - 50;
   console.log('===calcTranslateExtent===');
   console.log(minX, minY, maxX, maxY);
   console.log(gheight < svgheight ? 'smaller' : 'bigger', gheight);

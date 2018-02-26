@@ -23,7 +23,11 @@ svg {
   fill: #555;
 } */
 
-rect {
+rect.bg {
+  fill: #ffffff;
+}
+
+.node rect {
   fill: #999;
 }
 
@@ -33,6 +37,10 @@ rect {
 
 .active text {
   fill: #ffffff;
+}
+
+.node.selected {
+  cursor: default;
 }
 
 .selected text {
