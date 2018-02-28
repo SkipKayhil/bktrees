@@ -71,8 +71,9 @@ const NODE_WIDTH = 150;
 const NODE_HEIGHT = 50;
 
 function draw(updateData, data, id) {
-  bg.on('mousedown.te', setTranslateExtent);
-  bg.on('touchstart.te', setTranslateExtent);
+  // used to find min/max y nodes
+  let minNodeY = 0;
+  let maxNodeY = 0;
 
   console.log('===DRAW CALLED===');
   const baseT = d3
@@ -106,39 +107,6 @@ function draw(updateData, data, id) {
     .style('opacity', 1e-6)
     .remove();
 
-  // // EXPERIMENTAL CODE
-
-  // couldn't get this idea to work, but I want the concept in the git history
-  // in case I want to try again in the future
-
-  // removedLinks = link.exit();
-  // // .remove()
-  // // .on('end', setTranslateExtent);
-  // removedNodes = node.exit();
-  // // .remove()
-  // // .on('end', setTranslateExtent);
-  // console.log(removedLinks, removedNodes);
-  //
-  // // double experimental
-  // removedLinks.each(function() {
-  //   this.remove();
-  // });
-  // removedNodes.each(function() {
-  //   this.remove();
-  // });
-  // setTranslateExtent();
-  //
-  // removedLinks.each(function() {
-  //   //console.log(this);
-  //   toRemove.append(() => this);
-  // });
-  //
-  // removedNodes.each(function() {
-  //   //console.log(this);
-  //   toRemove.append(() => this);
-  // });
-  // //setTranslateExtent();
-
   // Append new elements if the link or node is entering
   linkEnter = link
     .enter()
@@ -163,6 +131,9 @@ function draw(updateData, data, id) {
     .attr('class', d => getClass('node', d, id))
     //.attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
     .attr('transform', d => {
+      minNodeY = d.x < minNodeY ? d.x : minNodeY;
+      maxNodeY = d.x > maxNodeY ? d.x : maxNodeY;
+
       return 'translate(' + d.y + ',' + d.x + ')';
     });
 
@@ -222,7 +193,16 @@ function draw(updateData, data, id) {
         svg.transition(baseT).call(zoom.translateTo, 100, 0);
       })
     )
-    .attr('transform', d => 'translate(' + d.y + ',' + d.x + ')');
+    .attr('transform', d => {
+      minNodeY = d.x < minNodeY ? d.x : minNodeY;
+      maxNodeY = d.x > maxNodeY ? d.x : maxNodeY;
+
+      return 'translate(' + d.y + ',' + d.x + ')';
+    });
+
+  // Re enable calling setTranslateExtent
+  bg.on('mousedown.te', () => setTranslateExtent(minNodeY, maxNodeY));
+  bg.on('touchstart.te', () => setTranslateExtent(minNodeY, maxNodeY));
 
   // setTranslateExtent();
 
@@ -234,23 +214,26 @@ function draw(updateData, data, id) {
   }
 }
 
-function setTranslateExtent() {
-  zoom.translateExtent(calcTranslateExtent());
+function setTranslateExtent(minNodeY, maxNodeY) {
+  zoom.translateExtent(calcTranslateExtent(minNodeY, maxNodeY));
 
   // Optimization to only update translateExtent after redraw
   bg.on('mousedown.te', () => {});
   bg.on('touchstart.te', () => {});
 }
 
-function calcTranslateExtent() {
+function calcTranslateExtent(minNodeY, maxNodeY) {
   const gwidth = g.node().getBBox().width;
-  const gheight = g.node().getBBox().height;
-  const minY = gheight < svgheight ? svgheight / -2 : -1 * gheight;
-  const maxY = gheight < svgheight ? svgheight / 2 : gheight;
+  //const gheight = g.node().getBBox().height;
+
+  // TODO: just return these values, don't create variables/log them
+  const minY = Math.min(minNodeY - 50, svgheight / -2);
+  const maxY = Math.max(maxNodeY + 50, svgheight / 2);
   const minX = -100;
-  const maxX = gwidth < svgwidth ? svgwidth - 100 : gwidth - 50;
+  const maxX = Math.max(svgwidth - 100, gwidth - 50);
   console.log('===calcTranslateExtent===');
   console.log(minX, minY, maxX, maxY);
-  console.log(gheight < svgheight ? 'smaller' : 'bigger', gheight);
+  //console.log(gheight < svgheight ? 'smaller' : 'bigger', gheight);
+  //console.log(minNodeY - 25, maxNodeY + 25, maxNodeY + 25 - minNodeY + 25);
   return [[minX, minY], [maxX, maxY]];
 }
