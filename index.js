@@ -212,28 +212,23 @@ function draw(updateData, data, id) {
     def += d.id == id ? ' selected' : '';
     return def;
   }
-}
 
-function setTranslateExtent(minNodeY, maxNodeY) {
-  zoom.translateExtent(calcTranslateExtent(minNodeY, maxNodeY));
+  function setTranslateExtent(minNodeY, maxNodeY) {
+    const gwidth = g.node().getBBox().width;
 
-  // Optimization to only update translateExtent after redraw
-  bg.on('mousedown.te', () => {});
-  bg.on('touchstart.te', () => {});
-}
+    zoom.translateExtent([
+      [
+        -100, // the root node has pos 0,0 so the minimum X will always be -100
+        Math.min(minNodeY - 50, svgheight / -2)
+      ],
+      [
+        Math.max(svgwidth - 100, gwidth - 50),
+        Math.max(maxNodeY + 50, svgheight / 2)
+      ]
+    ]);
 
-function calcTranslateExtent(minNodeY, maxNodeY) {
-  const gwidth = g.node().getBBox().width;
-  //const gheight = g.node().getBBox().height;
-
-  // TODO: just return these values, don't create variables/log them
-  const minY = Math.min(minNodeY - 50, svgheight / -2);
-  const maxY = Math.max(maxNodeY + 50, svgheight / 2);
-  const minX = -100;
-  const maxX = Math.max(svgwidth - 100, gwidth - 50);
-  console.log('===calcTranslateExtent===');
-  console.log(minX, minY, maxX, maxY);
-  //console.log(gheight < svgheight ? 'smaller' : 'bigger', gheight);
-  //console.log(minNodeY - 25, maxNodeY + 25, maxNodeY + 25 - minNodeY + 25);
-  return [[minX, minY], [maxX, maxY]];
+    // Optimization to only update translateExtent after redraw
+    bg.on('mousedown.te', () => {});
+    bg.on('touchstart.te', () => {});
+  }
 }
