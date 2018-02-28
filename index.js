@@ -66,13 +66,14 @@ const zoom = d3
     g.attr('transform', d3.event.transform);
   });
 svg.call(zoom).call(zoom.translateTo, 100, svgheight / 2);
-bg.on('mousedown.te', setTranslateExtent);
-bg.on('touchstart.te', setTranslateExtent);
 
 const NODE_WIDTH = 150;
 const NODE_HEIGHT = 50;
 
 function draw(updateData, data, id) {
+  bg.on('mousedown.te', setTranslateExtent);
+  bg.on('touchstart.te', setTranslateExtent);
+
   console.log('===DRAW CALLED===');
   const baseT = d3
     .transition()
@@ -161,7 +162,9 @@ function draw(updateData, data, id) {
     .append('g')
     .attr('class', d => getClass('node', d, id))
     //.attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
-    .attr('transform', d => 'translate(' + d.y + ',' + d.x + ')');
+    .attr('transform', d => {
+      return 'translate(' + d.y + ',' + d.x + ')';
+    });
 
   nodeEnter
     .on('click', (d, i) => {
@@ -233,6 +236,10 @@ function draw(updateData, data, id) {
 
 function setTranslateExtent() {
   zoom.translateExtent(calcTranslateExtent());
+
+  // Optimization to only update translateExtent after redraw
+  bg.on('mousedown.te', () => {});
+  bg.on('touchstart.te', () => {});
 }
 
 function calcTranslateExtent() {
@@ -241,7 +248,7 @@ function calcTranslateExtent() {
   const minY = gheight < svgheight ? svgheight / -2 : -1 * gheight;
   const maxY = gheight < svgheight ? svgheight / 2 : gheight;
   const minX = -100;
-  const maxX = gwidth - 50;
+  const maxX = gwidth < svgwidth ? svgwidth - 100 : gwidth - 50;
   console.log('===calcTranslateExtent===');
   console.log(minX, minY, maxX, maxY);
   console.log(gheight < svgheight ? 'smaller' : 'bigger', gheight);

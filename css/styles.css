@@ -10,6 +10,11 @@ svg {
   overflow: hidden;
 }
 
+input {
+  position: fixed;
+  font-size: 16px;
+}
+
 .node {
   cursor: pointer;
 }
@@ -28,7 +33,7 @@ rect.bg {
 }
 
 .node rect {
-  fill: #999;
+  fill: #ddd;
 }
 
 .active rect {
