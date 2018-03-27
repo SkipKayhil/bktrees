@@ -25,4 +25,4 @@ with open(sys.argv[1], newline='') as csvfile:
             }
             print(output)
 with open('NEW-archive.json', 'w') as jsonfile:
-    json.dump(output, jsonfile)
+    json.dump(output, jsonfile, separators=(',', ':'))
