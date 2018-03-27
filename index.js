@@ -9,10 +9,9 @@ window.addEventListener('load', () => {
       e.preventDefault();
       const search = parseInt(document.getElementById('searchbox').value);
       // TODO: show some kind of error when the search is invalid
-      console.log(search);
-      if (!Number.isInteger(search)) return;
-      if (search < 1 || search > HIGHEST_BK) return;
-      console.log(search);
+      if (!Number.isInteger(search)) return; // not a valid number
+      if (search < 1 || search > HIGHEST_BK) return; // not a valid BK
+      if (!data[search]) return; // not found in archive
       updateData(search);
     });
   });
@@ -55,7 +54,7 @@ const bg = svg
   .attr('width', svgwidth)
   .attr('height', svgheight);
 const g = svg.append('g').attr('id', 'g');
-const toRemove = svg.append('g').style('opacity', '1');
+// const toRemove = svg.append('g').style('opacity', '1');
 //.attr('transform', 'translate(100,' + svgheight / 2 + ') scale(1)');
 
 const zoom = d3
@@ -131,8 +130,8 @@ function draw(updateData, data, id) {
     .attr('class', d => getClass('node', d, id))
     //.attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
     .attr('transform', d => {
-      minNodeY = d.x < minNodeY ? d.x : minNodeY;
-      maxNodeY = d.x > maxNodeY ? d.x : maxNodeY;
+      minNodeY = Math.min(d.x, minNodeY);
+      maxNodeY = Math.max(d.x, maxNodeY);
 
       return 'translate(' + d.y + ',' + d.x + ')';
     });
@@ -164,7 +163,7 @@ function draw(updateData, data, id) {
     //.attr("class", d => getClass("node-id", d, id))
     .attr('dy', -3.5)
     .style('text-anchor', 'middle')
-    .text(d => 'BK ' + d.id);
+    .text(d => (d.id.startsWith('AM') ? d.id : 'BK ' + d.id));
 
   nodeEnter
     .append('text')
@@ -194,8 +193,8 @@ function draw(updateData, data, id) {
       })
     )
     .attr('transform', d => {
-      minNodeY = d.x < minNodeY ? d.x : minNodeY;
-      maxNodeY = d.x > maxNodeY ? d.x : maxNodeY;
+      minNodeY = Math.min(d.x, minNodeY);
+      maxNodeY = Math.max(d.x, maxNodeY);
 
       return 'translate(' + d.y + ',' + d.x + ')';
     });
