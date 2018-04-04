@@ -3,17 +3,68 @@ window.addEventListener('load', () => {
 
   d3.json('./data/archive.json', (error, data) => {
     const updateData = withData(data);
+    const searchForm = document.getElementById('search');
+    const searchInput = document.getElementById('search-input');
     updateData(HIGHEST_BK);
 
-    document.getElementById('search').addEventListener('submit', e => {
+    searchForm.addEventListener('submit', e => {
       e.preventDefault();
-      const search = parseInt(document.getElementById('searchbox').value);
+      const searchValue = parseInt(searchInput.value);
       // TODO: show some kind of error when the search is invalid
-      if (!Number.isInteger(search)) return; // not a valid number
-      if (search < 1 || search > HIGHEST_BK) return; // not a valid BK
-      if (!data[search]) return; // not found in archive
-      updateData(search);
+      if (!Number.isInteger(searchValue)) return; // not a valid number
+      if (searchValue < 1 || searchValue > HIGHEST_BK) return; // not a valid BK
+      if (!data[searchValue]) return; // not found in archive
+      closeAuto();
+      updateData(searchValue);
     });
+
+    searchInput.addEventListener('input', e => {
+      closeAuto();
+      if (!searchInput.value) return false;
+
+      const autoList = document.createElement('div');
+      autoList.setAttribute('id', 'auto-list');
+      autoList.setAttribute('class', 'auto-items');
+      searchInput.parentNode.parentNode.appendChild(autoList);
+
+      const bklist = Object.keys(data);
+      for (let i = 0; i < bklist.length; i++) {
+        if (autoList.children.length === 10) break;
+
+        const person = data[bklist[i]];
+        const index = person.name
+          .toUpperCase()
+          .indexOf(searchInput.value.toUpperCase());
+        if (index === -1) continue;
+
+        autoList.appendChild(createAutoItem(searchInput, person, index));
+      }
+    });
+
+    function createAutoItem(input, person, index) {
+      const autoItem = document.createElement('div');
+      autoItem.innerHTML =
+        person.name.slice(0, index) +
+        '<strong>' +
+        person.name.slice(index, index + input.value.length) +
+        '</strong>' +
+        person.name.slice(index + input.value.length) +
+        ' (' +
+        person.id +
+        ')';
+      autoItem.addEventListener('click', e => {
+        input.value = person.id;
+        closeAuto();
+        updateData(person.id);
+      });
+      return autoItem;
+    }
+
+    function closeAuto() {
+      const autoItems = document.getElementById('auto-list');
+      if (autoItems === null) return;
+      autoItems.parentNode.removeChild(autoItems);
+    }
   });
 });
 
@@ -54,8 +105,6 @@ const bg = svg
   .attr('width', svgwidth)
   .attr('height', svgheight);
 const g = svg.append('g').attr('id', 'g');
-// const toRemove = svg.append('g').style('opacity', '1');
-//.attr('transform', 'translate(100,' + svgheight / 2 + ') scale(1)');
 
 const zoom = d3
   .zoom()
@@ -86,7 +135,6 @@ function draw(updateData, data, id) {
     .parentId(node => node.big)(data);
 
   const tree = d3.tree(root).nodeSize([NODE_HEIGHT + 10, NODE_WIDTH + 25]);
-  // .size([svgheight, svgwidth - 200]);
 
   // Get base references
   const link = g
@@ -128,7 +176,6 @@ function draw(updateData, data, id) {
     .enter()
     .append('g')
     .attr('class', d => getClass('node', d, id))
-    //.attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
     .attr('transform', d => {
       minNodeY = Math.min(d.x, minNodeY);
       maxNodeY = Math.max(d.x, maxNodeY);
@@ -202,8 +249,6 @@ function draw(updateData, data, id) {
   // Re enable calling setTranslateExtent
   bg.on('mousedown.te', () => setTranslateExtent(minNodeY, maxNodeY));
   bg.on('touchstart.te', () => setTranslateExtent(minNodeY, maxNodeY));
-
-  // setTranslateExtent();
 
   function getClass(def, d, id) {
     //console.log(d, id);

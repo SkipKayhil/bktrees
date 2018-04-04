@@ -8,11 +8,33 @@ svg {
   width: 100%;
   margin: 0;
   overflow: hidden;
+  font-family: sans-serif;
+}
+
+form {
+  position: fixed;
+  left: 16px;
 }
 
 input {
-  position: fixed;
   font-size: 16px;
+  min-width: 255px;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  padding-bottom: 8px;
+  padding-top: 16px;
+}
+
+.input-wrapper::after {
+  display: block;
+  content: '';
+  border-bottom: 2px solid #000000;
+  transform: scaleX(0);
+  transition: transform 200ms ease-in-out;
+}
+
+.input-wrapper:focus-within::after {
+  transform: scaleX(1);
 }
 
 .node {
@@ -61,4 +83,29 @@ rect.bg {
   stroke: #555;
   stroke-opacity: 0.4;
   stroke-width: 1.5px;
+}
+
+#auto-list {
+  position: relative;
+  min-width: 255px;
+  top: 8px;
+  padding: 8px 0px;
+  background: white;
+  transition: opacity 0.2s ease-in-out;
+  /*dp2*/
+  box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+    0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+}
+
+#auto-list div {
+  padding: 0px 16px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 48px;
+  background: white;
+}
+
+#auto-list div:hover {
+  background: #eeeeee;
 }
