@@ -32,32 +32,40 @@ window.addEventListener('load', () => {
         if (autoList.children.length === 10) break;
 
         const person = data[bklist[i]];
-        const index = person.name
-          .toUpperCase()
-          .indexOf(searchInput.value.toUpperCase());
-        if (index === -1) continue;
+        const isNum = Number.isInteger(parseInt(searchInput.value));
+        const index = isNum
+          ? person.id.indexOf(searchInput.value)
+          : person.name.toUpperCase().indexOf(searchInput.value.toUpperCase());
+        if (index === -1 || (isNum && index !== 0)) continue;
 
-        autoList.appendChild(createAutoItem(searchInput, person, index));
+        autoList.appendChild(
+          createAutoItem(isNum, searchInput.value, person, index)
+        );
       }
     });
 
-    function createAutoItem(input, person, index) {
+    function createAutoItem(isNum, input, person, index) {
       const autoItem = document.createElement('div');
-      autoItem.innerHTML =
-        person.name.slice(0, index) +
-        '<strong>' +
-        person.name.slice(index, index + input.value.length) +
-        '</strong>' +
-        person.name.slice(index + input.value.length) +
-        ' (' +
-        person.id +
-        ')';
+      const first = isNum ? person.id : person.name;
+      const paren = isNum ? person.name : person.id;
+
+      autoItem.innerHTML = getString({
+        pre: first.slice(0, index),
+        bold: first.slice(index, index + input.length),
+        post: first.slice(index + input.length),
+        paren
+      });
+
       autoItem.addEventListener('click', e => {
-        input.value = person.id;
+        searchInput.value = person.id;
         closeAuto();
         updateData(person.id);
       });
       return autoItem;
+
+      function getString({ pre, bold, post, paren }) {
+        return `${pre}<strong>${bold}</strong>${post} (${paren})`;
+      }
     }
 
     function closeAuto() {
