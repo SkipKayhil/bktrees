@@ -25,7 +25,7 @@ window.addEventListener('load', () => {
       const autoList = document.createElement('div');
       autoList.setAttribute('id', 'auto-list');
       autoList.setAttribute('class', 'auto-items');
-      searchInput.parentNode.parentNode.appendChild(autoList);
+      searchInput.parentNode.parentNode.parentNode.appendChild(autoList);
 
       const bklist = Object.keys(data);
       for (let i = 0; i < bklist.length; i++) {
@@ -116,7 +116,7 @@ const g = svg.append('g').attr('id', 'g');
 
 const zoom = d3
   .zoom()
-  .scaleExtent([1, 1])
+  .scaleExtent([0.5, 1])
   .translateExtent([[-100, svgheight / -2], [svgwidth - 100, svgheight / 2]])
   .on('zoom', () => {
     g.attr('transform', d3.event.transform);

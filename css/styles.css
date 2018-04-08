@@ -3,7 +3,8 @@
 } */
 html,
 body,
-svg {
+svg,
+#svg-wrapper {
   height: 100%;
   width: 100%;
   margin: 0;
@@ -12,29 +13,40 @@ svg {
 }
 
 form {
+  margin: 8px;
+  padding: 8px;
+  padding-top: 0px;
+  background: white;
   position: fixed;
-  left: 16px;
+  box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+    0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
 }
 
 input {
   font-size: 16px;
   min-width: 255px;
   border: none;
-  /* border-bottom: 1px solid rgba(0, 0, 0, 0.12); */
-  padding-bottom: 8px;
-  padding-top: 16px;
+  padding-left: 16px;
+  padding-right: 8px;
 }
 
-.input-wrapper {
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.border-wrapper {
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
   transition: border 200ms ease-in-out;
 }
 
-.input-wrapper:focus-within {
+.border-wrapper:focus-within {
   border-bottom: 1px solid rgba(0, 0, 0, 0);
 }
 
-.input-wrapper::after {
+.border-wrapper::after {
   display: block;
   content: '';
   /* z-index: 3; */
@@ -43,7 +55,7 @@ input {
   transition: transform 200ms ease-in-out;
 }
 
-.input-wrapper:focus-within::after {
+.border-wrapper:focus-within::after {
   transform: scaleX(1);
 }
 
@@ -94,9 +106,6 @@ rect.bg {
   padding: 8px 0px;
   background: white;
   transition: opacity 0.2s ease-in-out;
-  /*dp2*/
-  box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
-    0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
 }
 
 #auto-list div {
@@ -110,4 +119,17 @@ rect.bg {
 
 #auto-list div:hover {
   background: #eeeeee;
+}
+
+@media screen and (orientation: portrait) {
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  form {
+    position: inherit;
+    margin-bottom: 0px;
+    z-index: 1;
+  }
 }

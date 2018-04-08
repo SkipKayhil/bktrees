@@ -7,11 +7,16 @@
   </head>
   <body>
     <form id='search'>
-      <div class='input-wrapper'>
-        <input id='search-input' type="text" placeholder="Search" name="bk">
+      <div class='border-wrapper'>
+        <div class='flex-row'>
+          <img id='search-icon' src='img/search.svg' height='24px' width='24px'>
+          <input id='search-input' type="text" placeholder="Search" name="bk">
+        </div>
       </div>
     </form>
-    <svg></svg>
+    <div id='svg-wrapper'>
+      <svg></svg>
+    </div>
     <script type="text/javascript" src="./lib/d3.min.js"></script>
     <script type="text/javascript" src="./index.js"></script>
   </body>
