@@ -49,12 +49,12 @@ window.addEventListener('load', () => {
       const first = isNum ? person.id : person.name;
       const paren = isNum ? person.name : person.id;
 
-      autoItem.innerHTML = getString({
-        pre: first.slice(0, index),
-        bold: first.slice(index, index + input.length),
-        post: first.slice(index + input.length),
+      autoItem.innerHTML = getString(
+        first.slice(0, index),
+        first.slice(index, index + input.length),
+        first.slice(index + input.length),
         paren
-      });
+      );
 
       autoItem.addEventListener('click', e => {
         searchInput.value = person.id;
@@ -63,7 +63,7 @@ window.addEventListener('load', () => {
       });
       return autoItem;
 
-      function getString({ pre, bold, post, paren }) {
+      function getString(pre, bold, post, paren) {
         return `${pre}<strong>${bold}</strong>${post} (${paren})`;
       }
     }
@@ -78,28 +78,25 @@ window.addEventListener('load', () => {
 
 function withData(json) {
   return function updateData(id) {
-    const filteredData = getBigLine(id).concat(getLittleTree(id).slice(1));
-    draw(updateData, filteredData, id);
+    draw(updateData, [...getBigLine(json[id].big), ...getLittleTree(id)], id);
   };
 
   function getLittleTree(id) {
-    var arr = [];
-    if (json[id] !== undefined) {
-      arr = arr.concat(json[id]);
-      for (var i = 0; i < json[id].children.length; i++) {
-        arr = arr.concat(getLittleTree(json[id].children[i]));
-      }
-    }
-    return arr;
+    return json[id] === undefined
+      ? []
+      : [
+          json[id],
+          ...json[id].children.reduce(
+            (tree, child, i, a) => [...tree, ...getLittleTree(child)],
+            []
+          )
+        ];
   }
 
   function getBigLine(id) {
-    var arr = [];
-    if (json[id].big) {
-      arr = arr.concat(getBigLine(json[id].big));
-    }
-    arr = arr.concat(json[id]);
-    return arr;
+    return json[id] === undefined
+      ? []
+      : [...getBigLine(json[id].big), json[id]];
   }
 }
 
