@@ -51,6 +51,10 @@ rect.bg {
   fill: #ddd;
 }
 
+.node:not(.selected):hover rect {
+  fill: #eee;
+}
+
 .active rect {
   fill: #046b37;
 }
