@@ -1,5 +1,5 @@
 window.addEventListener('load', () => {
-  const HIGHEST_BK = 2077;
+  const HIGHEST_BK = 2084;
 
   d3.json('./data/archive.json', (error, data) => {
     const updateData = withData(data);
