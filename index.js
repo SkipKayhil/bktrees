@@ -13,9 +13,9 @@ window.addEventListener('load', () => {
       // TODO: show some kind of error when the search is invalid
       if (!Number.isInteger(searchValue)) return; // not a valid number
       if (searchValue < 1 || searchValue > HIGHEST_BK) return; // not a valid BK
-      if (!data[searchValue]) return; // not found in archive
+      if (!data[searchInput.value]) return; // not found in archive
       closeAuto();
-      updateData(searchValue);
+      updateData(searchInput.value);
     });
 
     searchInput.addEventListener('input', e => {
@@ -24,17 +24,14 @@ window.addEventListener('load', () => {
 
       const autoList = document.createElement('div');
       autoList.setAttribute('id', 'auto-list');
-      autoList.setAttribute('class', 'auto-items');
-      searchInput.parentNode.parentNode.parentNode.appendChild(autoList);
+      searchForm.appendChild(autoList);
 
-      const bklist = Object.keys(data);
-      for (let i = 0; i < bklist.length; i++) {
+      for (const [bk, person] of Object.entries(data)) {
         if (autoList.children.length === 10) break;
 
-        const person = data[bklist[i]];
         const isNum = Number.isInteger(parseInt(searchInput.value));
         const index = isNum
-          ? person.id.indexOf(searchInput.value)
+          ? bk.indexOf(searchInput.value)
           : person.name.toUpperCase().indexOf(searchInput.value.toUpperCase());
         if (index === -1 || (isNum && index !== 0)) continue;
 

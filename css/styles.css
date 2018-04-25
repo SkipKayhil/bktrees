@@ -35,12 +35,13 @@ input {
 }
 
 .node {
+  font-size: 15px;
   cursor: pointer;
 }
 
-.node text {
-  font: 15px sans-serif;
-  line-height: 15px;
+.node.selected {
+  cursor: default;
+  font-weight: bold;
 }
 
 rect.bg {
@@ -61,14 +62,6 @@ rect.bg {
 
 .active text {
   fill: #ffffff;
-}
-
-.node.selected {
-  cursor: default;
-}
-
-.selected text {
-  font-weight: bold;
 }
 
 .link {
