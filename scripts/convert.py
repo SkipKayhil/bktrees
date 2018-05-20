@@ -3,6 +3,7 @@ import json, csv, sys
 
 def main():
     output = {}
+    stats = [0 for x in range(21)]
 
     if len(sys.argv) < 2:
         print('ERROR: No .csv argument was passed in')
@@ -29,6 +30,8 @@ def main():
                     'children':
                     [bk.strip() for bk in row[LITTLES].split(',') if bk != '']
                 }
+            if row[BIG_BK]:
+                stats[int(row[BK]) // 100] += 1
         # print(output)
 
     # verify data
@@ -40,8 +43,14 @@ def main():
         if big != '' and bk not in output[big]['children']:
             print('ERROR: %s does not have %s as little' % (big, bk))
 
-    with open('NEW-archive.json', 'w') as jsonfile:
-        json.dump(output, jsonfile, sort_keys=True, separators=(',', ':'))
+    # dump to json if path is provided
+    if len(sys.argv) == 3:
+        with open(sys.argv[2], 'w') as jsonfile:
+            json.dump(output, jsonfile, sort_keys=True, separators=(',', ':'))
+
+    # print stats
+    for i in range(21):
+        print('%2dxx: %d' % (i, stats[i]))
 
 
 if __name__ == '__main__':
