@@ -1,9 +1,13 @@
 import json, csv, sys
+import matplotlib.pyplot as plt
 
 
 def main():
+    HIGHEST_BK = 2084
+    NUM_HUNDERED = HIGHEST_BK // 100 + 1
     output = {}
-    stats = [0 for x in range(21)]
+    stats = {}
+    stats['count'] = [0 for x in range(NUM_HUNDERED)]
 
     if len(sys.argv) < 2:
         print('ERROR: No .csv argument was passed in')
@@ -31,7 +35,7 @@ def main():
                     [bk.strip() for bk in row[LITTLES].split(',') if bk != '']
                 }
             if row[BIG_BK]:
-                stats[int(row[BK]) // 100] += 1
+                stats['count'][int(row[BK]) // 100] += 1
         # print(output)
 
     # verify data
@@ -49,8 +53,26 @@ def main():
             json.dump(output, jsonfile, sort_keys=True, separators=(',', ':'))
 
     # print stats
-    for i in range(21):
-        print('%2dxx: %d' % (i, stats[i]))
+    for i in range(NUM_HUNDERED):
+        print('%2dxx: %d' % (i, stats['count'][i]))
+
+    # create bar chart
+    [
+        plt.annotate(
+            "{:.0f}".format(rect.get_height()),
+            (rect.get_x() + rect.get_width() / 2, rect.get_height()),
+            xytext=(0, 5),
+            textcoords="offset points",
+            ha='center',
+            va='bottom') for rect in plt.bar(
+                range(NUM_HUNDERED), stats['count'], .8, color='blue')
+    ]
+    plt.xticks(
+        range(NUM_HUNDERED), ['%2dxx' % x for x in range(NUM_HUNDERED)],
+        rotation=-45)
+    plt.gca().set_ylim([0, 100])
+
+    plt.savefig("graph.svg")
 
 
 if __name__ == '__main__':
