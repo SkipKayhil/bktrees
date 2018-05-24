@@ -36,7 +36,7 @@ def main():
                 }
             if row[BIG_BK]:
                 stats['count'][int(row[BK]) // 100] += 1
-        # print(output)
+    stats['count'][20] = 100
 
     # verify data
     for bk in output:
