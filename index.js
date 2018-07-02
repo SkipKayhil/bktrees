@@ -22,8 +22,7 @@ window.addEventListener('load', () => {
       closeAuto();
       if (!searchInput.value) return false;
 
-      const autoList = document.createElement('div');
-      autoList.setAttribute('id', 'auto-list');
+      const autoList = document.createElement('ul');
       searchForm.appendChild(autoList);
 
       for (const [bk, person] of Object.entries(data)) {
@@ -42,7 +41,7 @@ window.addEventListener('load', () => {
     });
 
     function createAutoItem(isNum, input, person, index) {
-      const autoItem = document.createElement('div');
+      const autoItem = document.createElement('li');
       const first = isNum ? person.id : person.name;
       const paren = isNum ? person.name : person.id;
 
@@ -66,9 +65,9 @@ window.addEventListener('load', () => {
     }
 
     function closeAuto() {
-      const autoItems = document.getElementById('auto-list');
-      if (autoItems === null) return;
-      autoItems.parentNode.removeChild(autoItems);
+      const list = document.getElementById('searchbox').nextElementSibling;
+      if (list === null) return;
+      list.remove();
     }
   });
 });
