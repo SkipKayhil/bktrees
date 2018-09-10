@@ -12,7 +12,7 @@ window.addEventListener('load', () => {
       const searchValue = parseInt(searchInput.value);
       // TODO: show some kind of error when the search is invalid
       if (!Number.isInteger(searchValue)) return; // not a valid number
-      if (searchValue < 1 || searchValue > HIGHEST_BK) return; // not a valid BK
+      if (searchValue > HIGHEST_BK) return; // not a valid BK
       if (!data[searchInput.value]) return; // not found in archive
       closeAuto();
       updateData(searchInput.value);
@@ -22,46 +22,44 @@ window.addEventListener('load', () => {
       closeAuto();
       if (!searchInput.value) return false;
 
-      const autoList = document.createElement('ul');
-      searchForm.appendChild(autoList);
-
-      for (const [bk, person] of Object.entries(data)) {
-        if (autoList.children.length === 10) break;
-
-        const isNum = Number.isInteger(parseInt(searchInput.value));
-        const index = isNum
-          ? bk.indexOf(searchInput.value)
-          : person.name.toUpperCase().indexOf(searchInput.value.toUpperCase());
-        if (index === -1 || (isNum && index !== 0)) continue;
-
-        autoList.appendChild(
-          createAutoItem(isNum, searchInput.value, person, index)
-        );
-      }
-    });
-
-    function createAutoItem(isNum, input, person, index) {
-      const autoItem = document.createElement('li');
-      const first = isNum ? person.id : person.name;
-      const paren = isNum ? person.name : person.id;
-
-      autoItem.innerHTML = getString(
-        first.slice(0, index),
-        first.slice(index, index + input.length),
-        first.slice(index + input.length),
-        paren
+      const doPerson = withDoPerson(
+        document.createElement('ul'),
+        searchInput.value
       );
 
-      autoItem.addEventListener('click', e => {
-        searchInput.value = person.id;
-        closeAuto();
-        updateData(person.id);
-      });
-      return autoItem;
+      Object.values(data).every(doPerson);
+    });
 
-      function getString(pre, bold, post, paren) {
-        return `${pre}<strong>${bold}</strong>${post} (${paren})`;
-      }
+    function withDoPerson(autoList, search) {
+      const isNum = !isNaN(search);
+
+      searchForm.appendChild(autoList);
+
+      return function(person) {
+        const index = isNum
+          ? person.id.indexOf(search)
+          : person.name.toLowerCase().indexOf(search.toLowerCase());
+        if (index === -1 || (isNum && index !== 0)) return true;
+
+        const first = isNum ? person.id : person.name;
+        const paren = isNum ? person.name : person.id;
+        const replace = first.slice(index, index + search.length);
+        const autoItem = document.createElement('li');
+
+        autoItem.innerHTML = `${first} (${paren})`.replace(
+          replace,
+          replace.bold()
+        );
+
+        autoItem.addEventListener('click', e => {
+          searchInput.value = person.id;
+          closeAuto();
+          updateData(person.id);
+        });
+
+        autoList.appendChild(autoItem);
+        return autoList.children.length !== 10;
+      };
     }
 
     function closeAuto() {
@@ -91,8 +89,8 @@ function withData(json) {
 
   function getBigLine(id) {
     return json[id] === undefined
-      ? []
-      : [...getBigLine(json[id].big), json[id]];
+      ? new Set()
+      : getBigLine(json[id].big).add(json[id]);
   }
 }
 
