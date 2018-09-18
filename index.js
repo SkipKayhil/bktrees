@@ -1,3 +1,5 @@
+'use strict';
+
 window.addEventListener('load', () => {
   const HIGHEST_BK = 2084;
 
@@ -22,12 +24,9 @@ window.addEventListener('load', () => {
       closeAuto();
       if (!searchInput.value) return false;
 
-      const doPerson = withDoPerson(
-        document.createElement('ul'),
-        searchInput.value
+      Object.values(data).every(
+        withDoPerson(document.createElement('ul'), searchInput.value)
       );
-
-      Object.values(data).every(doPerson);
     });
 
     function withDoPerson(autoList, search) {
@@ -35,26 +34,23 @@ window.addEventListener('load', () => {
 
       searchForm.appendChild(autoList);
 
-      return function(person) {
-        const index = isNum
-          ? person.id.indexOf(search)
-          : person.name.toLowerCase().indexOf(search.toLowerCase());
+      return function({ id, name }) {
+        const [first, paren] = isNum ? [id, name] : [name, id];
+        const index = first.toLowerCase().indexOf(search.toLowerCase());
         if (index === -1 || (isNum && index !== 0)) return true;
 
-        const first = isNum ? person.id : person.name;
-        const paren = isNum ? person.name : person.id;
         const replace = first.slice(index, index + search.length);
         const autoItem = document.createElement('li');
 
         autoItem.innerHTML = `${first} (${paren})`.replace(
           replace,
-          replace.bold()
+          `<b>${replace}</b>`
         );
 
         autoItem.addEventListener('click', e => {
-          searchInput.value = person.id;
+          searchInput.value = id;
           closeAuto();
-          updateData(person.id);
+          updateData(id);
         });
 
         autoList.appendChild(autoItem);
@@ -64,33 +60,25 @@ window.addEventListener('load', () => {
 
     function closeAuto() {
       const list = document.getElementById('searchbox').nextElementSibling;
-      if (list === null) return;
-      list.remove();
+      if (list !== null) list.remove();
     }
   });
 });
 
 function withData(json) {
   return function updateData(id) {
-    draw(updateData, [...getBigLine(json[id].big), ...getLittleTree(id)], id);
+    draw(updateData, [...bigLineGenerator(id), ...littleTreeGenerator(id)], id);
   };
 
-  function getLittleTree(id) {
-    return json[id] === undefined
-      ? []
-      : [
-          json[id],
-          ...json[id].children.reduce(
-            (tree, child, i, a) => [...tree, ...getLittleTree(child)],
-            []
-          )
-        ];
+  function* littleTreeGenerator(id) {
+    yield json[id];
+    for (const child of json[id].children) {
+      yield* littleTreeGenerator(child);
+    }
   }
 
-  function getBigLine(id) {
-    return json[id] === undefined
-      ? new Set()
-      : getBigLine(json[id].big).add(json[id]);
+  function* bigLineGenerator(id) {
+    while ((id = json[id].big) !== '') yield json[id];
   }
 }
 
@@ -154,7 +142,7 @@ function draw(updateData, data, id) {
     .remove();
 
   // Append new elements if the link or node is entering
-  linkEnter = link
+  const linkEnter = link
     .enter()
     .append('path')
     .attr('class', 'link')
@@ -171,7 +159,7 @@ function draw(updateData, data, id) {
     .transition(baseT)
     .style('stroke-opacity', 1);
 
-  nodeEnter = node
+  const nodeEnter = node
     .enter()
     .append('g')
     .attr('class', d => getClass('node', d, id))
