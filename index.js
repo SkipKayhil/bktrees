@@ -5,41 +5,37 @@ window.addEventListener('load', () => {
 
   d3.json('./data/archive.json', (error, data) => {
     const updateData = withData(data);
-    const searchForm = document.getElementById('search');
-    const searchInput = document.getElementById('search-input');
     updateData(HIGHEST_BK);
 
-    searchForm.addEventListener('submit', e => {
+    document.getElementById('search').addEventListener('submit', e => {
       e.preventDefault();
-      const searchValue = parseInt(searchInput.value);
+      const searchValue = parseInt(e.target.bk.value);
       // TODO: show some kind of error when the search is invalid
       if (!Number.isInteger(searchValue)) return; // not a valid number
       if (searchValue > HIGHEST_BK) return; // not a valid BK
-      if (!data[searchInput.value]) return; // not found in archive
+      if (!data[searchValue]) return; // not found in archive
       closeAuto();
-      updateData(searchInput.value);
+      updateData(searchValue);
     });
 
-    searchInput.addEventListener('input', e => {
+    document.getElementById('search-input').addEventListener('input', e => {
       closeAuto();
-      if (!searchInput.value) return false;
+      if (!e.target.value) return false;
 
       Object.values(data).every(
-        withDoPerson(document.createElement('ul'), searchInput.value)
+        withDoPerson(document.getElementById('search-list'), e.target)
       );
     });
 
-    function withDoPerson(autoList, search) {
-      const isNum = !isNaN(search);
-
-      searchForm.appendChild(autoList);
+    function withDoPerson(autoList, input) {
+      const isNum = !isNaN(input.value);
 
       return function({ id, name }) {
         const [first, paren] = isNum ? [id, name] : [name, id];
-        const index = first.toLowerCase().indexOf(search.toLowerCase());
+        const index = first.toLowerCase().indexOf(input.value.toLowerCase());
         if (index === -1 || (isNum && index !== 0)) return true;
 
-        const replace = first.slice(index, index + search.length);
+        const replace = first.slice(index, index + input.value.length);
         const autoItem = document.createElement('li');
 
         autoItem.innerHTML = `${first} (${paren})`.replace(
@@ -48,7 +44,7 @@ window.addEventListener('load', () => {
         );
 
         autoItem.addEventListener('click', e => {
-          searchInput.value = id;
+          input.value = id;
           closeAuto();
           updateData(id);
         });
@@ -59,8 +55,8 @@ window.addEventListener('load', () => {
     }
 
     function closeAuto() {
-      const list = document.getElementById('searchbox').nextElementSibling;
-      if (list !== null) list.remove();
+      const list = document.getElementById('search-list');
+      while (list.lastChild) list.removeChild(list.lastChild);
     }
   });
 });
@@ -189,7 +185,7 @@ function draw(updateData, data, id) {
     .attr('height', NODE_HEIGHT)
     .attr(
       'transform',
-      d => 'translate(-' + NODE_WIDTH / 2 + ', -' + NODE_HEIGHT / 2 + ')'
+      d => `translate(-${NODE_WIDTH / 2}, -${NODE_HEIGHT / 2})`
     );
 
   nodeEnter
@@ -230,7 +226,7 @@ function draw(updateData, data, id) {
       minNodeY = Math.min(d.x, minNodeY);
       maxNodeY = Math.max(d.x, maxNodeY);
 
-      return 'translate(' + d.y + ',' + d.x + ')';
+      return `translate(${d.y},${d.x})`;
     });
 
   // Re enable calling setTranslateExtent

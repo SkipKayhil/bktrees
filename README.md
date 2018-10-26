@@ -7,9 +7,20 @@
 ## Updating
 
 1.  Add new members/information to Membership archive
-2.  Export as a `.csv`
-3.  Run `python3 scripts/convert.py data/archive.csv [data/archive.json]`
-4.  Update git repo
+2.  Run `scripts/convert.py`
+3.  Update git repo
+
+## Python Script
+
+```
+usage: convert.py [-h] [-v] [-o OUTPUT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         print stats to the console
+  -o OUTPUT, --output OUTPUT
+                        JSON file to dump into
+```
 
 ## JSON Format
 

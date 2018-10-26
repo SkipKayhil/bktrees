@@ -1,4 +1,4 @@
-import json, csv, sys
+import json, csv, requests, argparse
 import matplotlib.pyplot as plt
 
 
@@ -14,24 +14,26 @@ def main():
     output = {}
     stats = {"count": [0 for x in range(NUM_HUNDERED)]}
 
-    if len(sys.argv) < 2:
-        print("ERROR: No .csv argument was passed in")
-        exit()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-v", "--verbose", help="print stats to the console", action="store_true"
+    )
+    parser.add_argument("-o", "--output", help="JSON file to dump into")
+    args = parser.parse_args()
 
-    with open(sys.argv[1], newline="") as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=",", quotechar='"')
+    DOC_URL = "https://docs.google.com/spreadsheets/d/1J8GV5n5reqr6zHsHFEyTUz4L3AZNK5x74ZIt9l_ocMc/export?format=csv&id=1J8GV5n5reqr6zHsHFEyTUz4L3AZNK5x74ZIt9l_ocMc&gid=0"
+    csvstring = requests.get(DOC_URL).text.splitlines()
 
-        for row in reader:
-            if row["First"] or row["Last"] or row["Big BK"] or row["Littles"]:
-                output[row["BK"]] = {
-                    "id": row["BK"],
-                    "name": row["First"] + " " + row["Last"],
-                    "big": row["Big BK"],
-                    "children": [bk for bk in row["Littles"].split(", ") if bk],
-                }
-            if row["Big BK"] or row["BK"] in IGNORE_BKS:
-                stats["count"][int(row["BK"]) // 100] += 1
-    stats["count"][20] = 100
+    for row in csv.DictReader(csvstring):
+        if row["First"] or row["Last"] or row["Big BK"] or row["Littles"]:
+            output[row["BK"]] = {
+                "id": row["BK"],
+                "name": row["First"] + " " + row["Last"],
+                "big": row["Big BK"],
+                "children": [bk for bk in row["Littles"].split(", ") if bk],
+            }
+        if row["Big BK"] or row["BK"] in IGNORE_BKS:
+            stats["count"][int(row["BK"]) // 100] += 1
 
     # verify data
     for bk in output:
@@ -43,13 +45,14 @@ def main():
             print("ERROR: %s does not have %s as little" % (big, bk))
 
     # dump to json if path is provided
-    if len(sys.argv) == 3:
-        with open(sys.argv[2], "w") as jsonfile:
+    if args.output:
+        with open(args.output, "w") as jsonfile:
             json.dump(output, jsonfile, sort_keys=True, separators=(",", ":"))
 
     # print stats
-    for i in range(NUM_HUNDERED):
-        print("%2dxx: %d" % (i, stats["count"][i]))
+    if args.verbose:
+        for i in range(NUM_HUNDERED):
+            print("%2dxx: %d" % (i, stats["count"][i]))
 
     # create bar chart
     plt.figure(figsize=(12, 9))
