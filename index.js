@@ -1,69 +1,95 @@
 'use strict';
 
-window.addEventListener('load', () => {
+(function($) {
   const HIGHEST_BK = 2084;
 
-  d3.json('./data/archive.json', (error, data) => {
-    const updateData = withData(data);
-    updateData(HIGHEST_BK);
+  const bold = (string, bold) => string.replace(bold, `<b>${bold}</b>`);
 
-    document.getElementById('search').addEventListener('submit', e => {
+  function addToList(list, id, text) {
+    list.insertAdjacentHTML('beforeend', `<li data-id="${id}">${text}</li>`);
+  }
+
+  function closeAuto(list) {
+    while (list.childElementCount) list.removeChild(list.lastChild);
+  }
+
+  d3.json('./data/archive.json', (error, data) => {
+    const update = (() => {
+      const redraw = withData(data);
+      redraw(HIGHEST_BK);
+
+      return bk => {
+        $('search-list').classList.add('hidden');
+        closeAuto($('search-list'));
+        addToList($('search-list'), bk, `<b>${bk}</b> (${data[bk].name})`);
+
+        redraw(bk);
+      };
+    })();
+
+    $('search').addEventListener('submit', e => {
       e.preventDefault();
       const searchValue = parseInt(e.target.bk.value);
       // TODO: show some kind of error when the search is invalid
       if (!Number.isInteger(searchValue)) return; // not a valid number
       if (searchValue > HIGHEST_BK) return; // not a valid BK
       if (!data[searchValue]) return; // not found in archive
-      closeAuto();
-      updateData(searchValue);
+
+      update(searchValue);
+      e.target.bk.blur();
     });
 
-    document.getElementById('search-input').addEventListener('input', e => {
-      closeAuto();
-      if (!e.target.value) return false;
-
-      Object.values(data).every(
-        withDoPerson(document.getElementById('search-list'), e.target)
-      );
+    $('search-list').addEventListener('click', e => {
+      const id = e.target.dataset.id || e.target.parentNode.dataset.id;
+      $('search-input').value = id;
+      update(id);
     });
 
-    function withDoPerson(autoList, input) {
-      const isNum = !isNaN(input.value);
+    $('search-input').addEventListener('focusin', e =>
+      $('search-list').classList.remove('hidden')
+    );
+
+    $('svg-wrapper').addEventListener('click', e =>
+      $('search-list').classList.add('hidden')
+    );
+
+    $('search-input').addEventListener('input', e => {
+      closeAuto($('search-list'));
+      if (e.target.value)
+        Object.values(data).every(doPerson($('search-list'), e.target));
+    });
+
+    function doPerson(list, { value }) {
+      const isNum = !isNaN(value);
 
       return function({ id, name }) {
-        const [first, paren] = isNum ? [id, name] : [name, id];
-        const index = first.toLowerCase().indexOf(input.value.toLowerCase());
+        const [left, paren] = isNum ? [id, name] : [name, id];
+        const index = left.toLowerCase().indexOf(value.toLowerCase());
         if (index === -1 || (isNum && index !== 0)) return true;
 
-        const replace = first.slice(index, index + input.value.length);
-        const autoItem = document.createElement('li');
-
-        autoItem.innerHTML = `${first} (${paren})`.replace(
-          replace,
-          `<b>${replace}</b>`
+        const replace = left.slice(index, index + value.length);
+        const text = bold(
+          `${left} (${paren})`,
+          left.slice(i, i + value.length)
         );
+        addToList(list, id, bold(`${left} (${paren})`, replace));
 
-        autoItem.addEventListener('click', e => {
-          input.value = id;
-          closeAuto();
-          updateData(id);
-        });
-
-        autoList.appendChild(autoItem);
-        return autoList.children.length !== 10;
+        return list.children.length !== 10;
       };
     }
-
-    function closeAuto() {
-      const list = document.getElementById('search-list');
-      while (list.lastChild) list.removeChild(list.lastChild);
-    }
   });
-});
+})(id => document.getElementById(id));
 
 function withData(json) {
   return function updateData(id) {
-    draw(updateData, [...bigLineGenerator(id), ...littleTreeGenerator(id)], id);
+    const bigLine = [...bigLineGenerator(id)];
+    const root = json[id].big === '' ? id : bigLine[bigLine.length - 1].id;
+    draw(
+      updateData,
+      [...littleTreeGenerator(root)],
+      [...littleTreeGenerator(id)].concat(bigLine),
+      id
+    );
   };
 
   function* littleTreeGenerator(id) {
@@ -101,7 +127,7 @@ svg.call(zoom).call(zoom.translateTo, 100, svgheight / 2);
 const NODE_WIDTH = 150;
 const NODE_HEIGHT = 50;
 
-function draw(updateData, data, id) {
+function draw(updateData, treeData, line, id) {
   // used to find min/max y nodes
   let minNodeY = 0;
   let maxNodeY = 0;
@@ -115,7 +141,7 @@ function draw(updateData, data, id) {
   const root = d3
     .stratify()
     .id(node => node.id)
-    .parentId(node => node.big)(data);
+    .parentId(node => node.big)(treeData);
 
   const tree = d3.tree(root).nodeSize([NODE_HEIGHT + 10, NODE_WIDTH + 25]);
 
@@ -163,7 +189,7 @@ function draw(updateData, data, id) {
       minNodeY = Math.min(d.x, minNodeY);
       maxNodeY = Math.max(d.x, maxNodeY);
 
-      return 'translate(' + d.y + ',' + d.x + ')';
+      return `translate(${d.y},${d.x})`;
     });
 
   nodeEnter
@@ -234,10 +260,10 @@ function draw(updateData, data, id) {
   bg.on('touchstart.te', () => setTranslateExtent(minNodeY, maxNodeY));
 
   function getClass(def, d, id) {
-    //console.log(d, id);
-    def += d.data.active ? ' active' : '';
-    def += d.id == id ? ' selected' : '';
-    return def;
+    const active = d.data.active ? ' active' : '';
+    const selected = d.id == id ? ' selected' : '';
+    const direct = line.findIndex(e => e.id === d.id) !== -1 ? ' direct' : '';
+    return `${def}${active}${selected}${direct}`;
   }
 
   function setTranslateExtent(minNodeY, maxNodeY) {

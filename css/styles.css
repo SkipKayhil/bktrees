@@ -62,15 +62,20 @@ rect.bg {
 }
 
 .node:not(.selected):hover rect {
-  fill: #eee;
+  opacity: 0.5;
 }
 
 .active rect {
   fill: #046b37;
 }
 
-.active text {
+.active text,
+.direct text {
   fill: #ffffff;
+}
+
+.direct rect {
+  fill: #584fa1;
 }
 
 .link {
@@ -82,9 +87,13 @@ rect.bg {
 
 #search ul {
   min-width: 255px;
-  padding: 0.5rem 0;
-  margin: 0;
+  padding: 0;
+  margin: 0.5rem 0;
   transition: opacity 0.2s ease-in-out;
+}
+
+#search ul.hidden {
+  display: none;
 }
 
 #search ul:empty {
@@ -112,11 +121,6 @@ rect.bg {
 
   #searchbox {
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-    transition: border 200ms ease-in-out;
-  }
-
-  #searchbox:focus-within {
-    border-bottom: 1px solid rgba(0, 0, 0, 0);
   }
 
   #searchbox::after {
@@ -126,7 +130,7 @@ rect.bg {
     transform: scaleX(0);
     transition: transform 200ms ease-in-out;
     position: absolute;
-    bottom: 0;
+    bottom: -1px;
     left: 0;
     width: 100%;
   }
