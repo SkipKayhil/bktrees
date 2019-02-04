@@ -1,9 +1,8 @@
 'use strict';
 
-(function($) {
+d3.json('./data/archive.json').then(data => {
   const HIGHEST_BK = 2084;
-
-  const bold = (string, bold) => string.replace(bold, `<b>${bold}</b>`);
+  const $ = id => document.getElementById(id);
 
   function addToList(list, id, text) {
     list.insertAdjacentHTML('beforeend', `<li data-id="${id}">${text}</li>`);
@@ -13,72 +12,69 @@
     while (list.childElementCount) list.removeChild(list.lastChild);
   }
 
-  d3.json('./data/archive.json', (error, data) => {
-    const update = (() => {
-      const redraw = withData(data);
-      redraw(HIGHEST_BK);
+  const update = (() => {
+    const redraw = withData(data);
+    redraw(HIGHEST_BK);
 
-      return bk => {
-        $('search-list').classList.add('hidden');
-        closeAuto($('search-list'));
-        addToList($('search-list'), bk, `<b>${bk}</b> (${data[bk].name})`);
-
-        redraw(bk);
-      };
-    })();
-
-    $('search').addEventListener('submit', e => {
-      e.preventDefault();
-      const searchValue = parseInt(e.target.bk.value);
-      // TODO: show some kind of error when the search is invalid
-      if (!Number.isInteger(searchValue)) return; // not a valid number
-      if (searchValue > HIGHEST_BK) return; // not a valid BK
-      if (!data[searchValue]) return; // not found in archive
-
-      update(searchValue);
-      e.target.bk.blur();
-    });
-
-    $('search-list').addEventListener('click', e => {
-      const id = e.target.dataset.id || e.target.parentNode.dataset.id;
-      $('search-input').value = id;
-      update(id);
-    });
-
-    $('search-input').addEventListener('focusin', e =>
-      $('search-list').classList.remove('hidden')
-    );
-
-    $('svg-wrapper').addEventListener('click', e =>
-      $('search-list').classList.add('hidden')
-    );
-
-    $('search-input').addEventListener('input', e => {
+    return bk => {
+      $('search-list').classList.add('hidden');
       closeAuto($('search-list'));
-      if (e.target.value)
-        Object.values(data).every(doPerson($('search-list'), e.target));
-    });
+      addToList($('search-list'), bk, `<b>${bk}</b> (${data[bk].name})`);
 
-    function doPerson(list, { value }) {
-      const isNum = !isNaN(value);
+      redraw(bk);
+    };
+  })();
 
-      return function({ id, name }) {
-        const [left, paren] = isNum ? [id, name] : [name, id];
-        const index = left.toLowerCase().indexOf(value.toLowerCase());
-        if (index === -1 || (isNum && index !== 0)) return true;
+  $('search').addEventListener('submit', e => {
+    e.preventDefault();
+    const searchValue = parseInt(e.target.bk.value);
+    // TODO: show some kind of error when the search is invalid
+    if (!Number.isInteger(searchValue)) return; // not a valid number
+    if (searchValue > HIGHEST_BK) return; // not a valid BK
+    if (!data[searchValue]) return; // not found in archive
 
-        const replace = left.slice(index, index + value.length);
-        const text = bold(
-          `${left} (${paren})`,
-          left.slice(i, i + value.length)
-        );
-        addToList(list, id, bold(`${left} (${paren})`, replace));
-
-        return list.children.length !== 10;
-      };
-    }
+    update(searchValue);
+    e.target.bk.blur();
   });
-})(id => document.getElementById(id));
+
+  $('search-list').addEventListener('click', e => {
+    const id = e.target.dataset.id || e.target.parentNode.dataset.id;
+    $('search-input').value = id;
+    update(id);
+  });
+
+  $('search-input').addEventListener('focusin', e =>
+    $('search-list').classList.remove('hidden')
+  );
+
+  $('svg-wrapper').addEventListener('click', e =>
+    $('search-list').classList.add('hidden')
+  );
+
+  $('search-input').addEventListener('input', e => {
+    closeAuto($('search-list'));
+    if (e.target.value)
+      Object.values(data).every(doPerson($('search-list'), e.target));
+  });
+
+  function doPerson(list, { value }) {
+    const isNum = !isNaN(value);
+
+    return function({ id, name }) {
+      const [left, paren] = isNum ? [id, name] : [name, id];
+      const index = left.toLowerCase().indexOf(value.toLowerCase());
+      if (index === -1 || (isNum && index !== 0)) return true;
+
+      const text = `${left} (${paren})`.replace(
+        left.slice(index, index + value.length),
+        '<b>$&</b>'
+      );
+      addToList(list, id, text);
+
+      return list.children.length !== 10;
+    };
+  }
+});
 
 function withData(json) {
   return function updateData(id) {
