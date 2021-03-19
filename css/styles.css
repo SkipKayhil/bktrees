@@ -50,6 +50,7 @@ input {
 }
 
 .node.selected {
+  pointer-events: none;
   font-weight: bold;
 }
 

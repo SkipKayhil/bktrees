@@ -13,17 +13,20 @@ d3.json('./data/archive.json').then(data => {
   }
 
   const update = (() => {
-    const redraw = withData(data);
-    redraw(HIGHEST_BK);
+    const redraw = draw(),
+      updateData = withData(data);
 
-    return bk => {
+    return function updateAndDraw(bk) {
       $('search-list').classList.add('hidden');
+      $('search-input').value = bk;
       closeAuto($('search-list'));
       addToList($('search-list'), bk, `<b>${bk}</b> (${data[bk].name})`);
 
-      redraw(bk);
+      redraw(updateAndDraw, updateData(bk), bk);
     };
   })();
+
+  update(HIGHEST_BK);
 
   $('search').addEventListener('submit', e => {
     e.preventDefault();
@@ -37,11 +40,9 @@ d3.json('./data/archive.json').then(data => {
     e.target.bk.blur();
   });
 
-  $('search-list').addEventListener('click', e => {
-    const id = e.target.dataset.id || e.target.parentNode.dataset.id;
-    $('search-input').value = id;
-    update(id);
-  });
+  $('search-list').addEventListener('click', e =>
+    update(e.target.dataset.id || e.target.parentNode.dataset.id)
+  );
 
   $('search-input').addEventListener('focusin', e =>
     $('search-list').classList.remove('hidden')
@@ -80,12 +81,10 @@ function withData(json) {
   return function updateData(id) {
     const bigLine = [...bigLineGenerator(id)];
     const root = json[id].big === '' ? id : bigLine[bigLine.length - 1].id;
-    draw(
-      updateData,
+    return [
       [...littleTreeGenerator(root)],
-      [...littleTreeGenerator(id)].concat(bigLine),
-      id
-    );
+      [...littleTreeGenerator(id)].concat(bigLine)
+    ];
   };
 
   function* littleTreeGenerator(id) {
@@ -100,184 +99,159 @@ function withData(json) {
   }
 }
 
-const svg = d3.select('svg');
-const svgwidth = parseInt(svg.style('width'));
-const svgheight = parseInt(svg.style('height'));
-// the blank background is a hack to call setTranslateEvent on mousedown
-const bg = svg
-  .append('rect')
-  .attr('class', 'bg')
-  .attr('width', svgwidth)
-  .attr('height', svgheight);
-const g = svg.append('g').attr('id', 'g');
+function draw() {
+  console.log('once');
 
-const zoom = d3
-  .zoom()
-  .scaleExtent([0.5, 1])
-  .translateExtent([[-100, svgheight / -2], [svgwidth - 100, svgheight / 2]])
-  .on('zoom', () => {
-    g.attr('transform', d3.event.transform);
-  });
-svg.call(zoom).call(zoom.translateTo, 100, svgheight / 2);
+  const NODE_WIDTH = 150,
+    NODE_HEIGHT = 50;
 
-const NODE_WIDTH = 150;
-const NODE_HEIGHT = 50;
+  const svg = d3.select('svg');
+  const svgwidth = parseInt(svg.style('width'));
+  const svgheight = parseInt(svg.style('height'));
+  // the blank background is a hack to call setTranslateEvent on mousedown
+  const bg = svg
+    .append('rect')
+    .attr('class', 'bg')
+    .attr('width', svgwidth)
+    .attr('height', svgheight);
+  const g = svg.append('g').attr('id', 'g');
 
-function draw(updateData, treeData, line, id) {
-  // used to find min/max y nodes
-  let minNodeY = 0;
-  let maxNodeY = 0;
+  const zoom = d3
+    .zoom()
+    .scaleExtent([0.5, 1])
+    .translateExtent([[-100, svgheight / -2], [svgwidth - 100, svgheight / 2]])
+    .on('zoom', () => {
+      g.attr('transform', d3.event.transform);
+    });
+  svg.call(zoom).call(zoom.translateTo, 100, svgheight / 2);
 
-  console.log('===DRAW CALLED===');
-  const baseT = d3
-    .transition()
-    .duration(375)
-    .ease(d3.easeLinear);
+  const fadeOut = exit =>
+    exit
+      .transition()
+      .duration(250)
+      .style('opacity', 0)
+      .remove();
 
-  const root = d3
+  const fadeIn = enter =>
+    enter
+      .style('opacity', 0)
+      .transition()
+      .duration(300)
+      .style('opacity', 1);
+
+  const setClass = (nodes, line, id) =>
+    nodes
+      .classed('node', true)
+      .classed('active', d => d.data.active)
+      .classed('selected', d => d.id === id.toString())
+      .classed('direct', d => line.findIndex(e => e.id === d.id) !== -1);
+
+  const createLinks = d3
+    .linkHorizontal()
+    .x(d => d.y) // define how the x/y values should be gotten from source
+    .y(d => d.x) // or target object ie. source/target = {x: x, y: y}
+    .source(d => ({ x: d.source.x, y: d.source.y + NODE_WIDTH / 2 }))
+    .target(d => ({ x: d.target.x, y: d.target.y - NODE_WIDTH / 2 }));
+
+  const createNode = nodes => {
+    nodes
+      .append('rect')
+      .attr('width', NODE_WIDTH)
+      .attr('height', NODE_HEIGHT)
+      .attr(
+        'transform',
+        d => `translate(-${NODE_WIDTH / 2}, -${NODE_HEIGHT / 2})`
+      );
+
+    nodes
+      .append('text')
+      .attr('dy', -3.5)
+      .style('text-anchor', 'middle')
+      .text(d => (d.id.startsWith('AM') ? d.id : 'BK ' + d.id));
+
+    nodes
+      .append('text')
+      .attr('dy', 15)
+      .style('text-anchor', 'middle')
+      .text(d => d.data.name);
+  };
+
+  // Data
+  const stratify = d3
     .stratify()
     .id(node => node.id)
-    .parentId(node => node.big)(treeData);
+    .parentId(node => node.big);
 
-  const tree = d3.tree(root).nodeSize([NODE_HEIGHT + 10, NODE_WIDTH + 25]);
+  const tree = d3.tree().nodeSize([NODE_HEIGHT + 10, NODE_WIDTH + 25]);
 
-  // Get base references
-  const link = g
-    .selectAll('.link')
-    .data(tree(root).links(), d => d.source.id * 10000 + d.target.id);
-  const node = g.selectAll('.node').data(root.descendants(), d => d.id);
+  return function redraw(updateData, [treeData, line], id) {
+    // used to find min/max y nodes
+    let minNodeY = 0;
+    let maxNodeY = 0;
 
-  // Remove exiting links/nodes
-  link
-    .exit()
-    .transition(baseT)
-    .style('stroke-opacity', 1e-6)
-    .remove();
-  node
-    .exit()
-    .transition(baseT)
-    .style('opacity', 1e-6)
-    .remove();
+    console.log('===DRAW CALLED===');
 
-  // Append new elements if the link or node is entering
-  const linkEnter = link
-    .enter()
-    .append('path')
-    .attr('class', 'link')
-    .attr(
-      'd',
-      d3
-        .linkHorizontal()
-        .x(d => d.y) // define how the x/y values should be gotten from source
-        .y(d => d.x) // or target object ie. source/target = {x: x, y: y}
-        .source(d => ({ x: d.source.x, y: d.source.y + NODE_WIDTH / 2 }))
-        .target(d => ({ x: d.target.x, y: d.target.y - NODE_WIDTH / 2 }))
-    )
-    .style('stroke-opacity', 1e-6)
-    .transition(baseT)
-    .style('stroke-opacity', 1);
+    const root = tree(stratify(treeData));
 
-  const nodeEnter = node
-    .enter()
-    .append('g')
-    .attr('class', d => getClass('node', d, id))
-    .attr('transform', d => {
-      minNodeY = Math.min(d.x, minNodeY);
-      maxNodeY = Math.max(d.x, maxNodeY);
+    g.selectAll('.link')
+      .data(root.links(), d => d.source.id * 10000 + d.target.id)
+      .join(
+        enter =>
+          enter
+            .append('path')
+            .attr('class', 'link')
+            .attr('d', createLinks)
+            .call(fadeIn),
+        null,
+        exit => exit.call(fadeOut)
+      );
 
-      return `translate(${d.y},${d.x})`;
-    });
+    g.selectAll('.node')
+      .data(root.descendants(), d => d.id)
+      .join(
+        enter =>
+          enter
+            .append('g')
+            .attr('transform', d => {
+              minNodeY = Math.min(d.x, minNodeY);
+              maxNodeY = Math.max(d.x, maxNodeY);
 
-  nodeEnter
-    .on('click', (d, i) => {
-      // Only redraw if necessary
-      if (g.select('.selected').data()[0].id === d.id) return;
-      updateData(d.id);
-    })
-    .style('opacity', 1e-6)
-    .transition(baseT)
-    .style('opacity', 1);
+              return `translate(${d.y},${d.x})`;
+            })
+            .on('click', function(d, _) {
+              if (!d3.select(this).classed('selected')) updateData(d.id);
+            })
+            .call(setClass, line, id)
+            .call(createNode)
+            .call(fadeIn),
+        update => update.call(setClass, line, id),
+        exit => exit.call(fadeOut)
+      );
 
-  // node.append("circle")
-  //     .attr("r", 10);
-  nodeEnter
-    .append('rect')
-    //.attr("class", d => getClass("node-rect", d, id))
-    .attr('width', NODE_WIDTH)
-    .attr('height', NODE_HEIGHT)
-    .attr(
-      'transform',
-      d => `translate(-${NODE_WIDTH / 2}, -${NODE_HEIGHT / 2})`
-    );
+    // Re enable calling setTranslateExtent
+    bg.on('mousedown.te', () => setTranslateExtent(minNodeY, maxNodeY));
+    bg.on('touchstart.te', () => setTranslateExtent(minNodeY, maxNodeY));
 
-  nodeEnter
-    .append('text')
-    //.attr("class", d => getClass("node-id", d, id))
-    .attr('dy', -3.5)
-    .style('text-anchor', 'middle')
-    .text(d => (d.id.startsWith('AM') ? d.id : 'BK ' + d.id));
+    console.log(minNodeY, maxNodeY);
+    console.log(g.node().getBBox().height, g.node().getBBox().width);
 
-  nodeEnter
-    .append('text')
-    //.attr("class", d => getClass("node-name", d, id))
-    .attr('dy', 15)
-    .style('text-anchor', 'middle')
-    .text(d => d.data.name);
+    function setTranslateExtent(minNodeY, maxNodeY) {
+      const gwidth = g.node().getBBox().width;
 
-  // Update positions of old links/nodes
-  link
-    .style('stroke-opacity', 1)
-    .transition(baseT)
-    .attr(
-      'd',
-      d3
-        .linkHorizontal()
-        .x(d => d.y) // define how the x/y values should be gotten from source
-        .y(d => d.x) // or target object ie. source/target = {x: x, y: y}
-        .source(d => ({ x: d.source.x, y: d.source.y + NODE_WIDTH / 2 }))
-        .target(d => ({ x: d.target.x, y: d.target.y - NODE_WIDTH / 2 }))
-    );
-  node
-    .attr('class', d => getClass('node', d, id))
-    .transition(
-      baseT.on('start', () => {
-        svg.transition(baseT).call(zoom.translateTo, 100, 0);
-      })
-    )
-    .attr('transform', d => {
-      minNodeY = Math.min(d.x, minNodeY);
-      maxNodeY = Math.max(d.x, maxNodeY);
+      zoom.translateExtent([
+        [
+          -100, // the root node has pos 0,0 so the minimum X will always be -100
+          Math.min(minNodeY - 50, svgheight / -2)
+        ],
+        [
+          Math.max(svgwidth - 100, gwidth - 50),
+          Math.max(maxNodeY + 50, svgheight / 2)
+        ]
+      ]);
 
-      return `translate(${d.y},${d.x})`;
-    });
-
-  // Re enable calling setTranslateExtent
-  bg.on('mousedown.te', () => setTranslateExtent(minNodeY, maxNodeY));
-  bg.on('touchstart.te', () => setTranslateExtent(minNodeY, maxNodeY));
-
-  function getClass(def, d, id) {
-    const active = d.data.active ? ' active' : '';
-    const selected = d.id == id ? ' selected' : '';
-    const direct = line.findIndex(e => e.id === d.id) !== -1 ? ' direct' : '';
-    return `${def}${active}${selected}${direct}`;
-  }
-
-  function setTranslateExtent(minNodeY, maxNodeY) {
-    const gwidth = g.node().getBBox().width;
-
-    zoom.translateExtent([
-      [
-        -100, // the root node has pos 0,0 so the minimum X will always be -100
-        Math.min(minNodeY - 50, svgheight / -2)
-      ],
-      [
-        Math.max(svgwidth - 100, gwidth - 50),
-        Math.max(maxNodeY + 50, svgheight / 2)
-      ]
-    ]);
-
-    // Optimization to only update translateExtent after redraw
-    bg.on('mousedown.te', () => {});
-    bg.on('touchstart.te', () => {});
-  }
+      // Optimization to only update translateExtent after redraw
+      bg.on('mousedown.te', () => {});
+      bg.on('touchstart.te', () => {});
+    }
+  };
 }
