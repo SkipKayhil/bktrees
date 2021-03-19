@@ -1,28 +1,44 @@
-'use strict';
-
 d3.json('./data/archive.json').then(data => {
   const HIGHEST_BK = 2084;
   const $ = id => document.getElementById(id);
 
-  function addToList(list, id, text) {
-    list.insertAdjacentHTML('beforeend', `<li data-id="${id}">${text}</li>`);
-  }
-
-  function closeAuto(list) {
+  function clearList() {
+    const list = $("search-list");
     while (list.childElementCount) list.removeChild(list.lastChild);
   }
 
+  function createListFor(search) {
+    clearList();
+
+    if (!search) return;
+
+    const list = $("search-list");
+    const isNum = !isNaN(search);
+
+    Object.values(data).every(({ id, name }) => {
+      const [left, paren] = isNum ? [id, name] : [name, id];
+      const index = left.toLowerCase().indexOf(search.toLowerCase());
+      if (index === -1 || (isNum && index !== 0)) return true;
+
+      const text = `${left} (${paren})`.replace(
+        left.slice(index, index + search.length),
+        "<b>$&</b>"
+      );
+
+      list.insertAdjacentHTML("beforeend", `<li data-id="${id}">${text}</li>`);
+
+      return list.children.length < 10;
+    });
+  }
+
   const update = (() => {
-    const redraw = draw(),
-      updateData = withData(data);
+    const draw = setupDraw(withData(data));
 
     return function updateAndDraw(bk) {
-      $('search-list').classList.add('hidden');
       $('search-input').value = bk;
-      closeAuto($('search-list'));
-      addToList($('search-list'), bk, `<b>${bk}</b> (${data[bk].name})`);
+      clearList();
 
-      redraw(updateAndDraw, updateData(bk), bk);
+      draw(updateAndDraw, bk);
     };
   })();
 
@@ -44,47 +60,21 @@ d3.json('./data/archive.json').then(data => {
     update(e.target.dataset.id || e.target.parentNode.dataset.id)
   );
 
-  $('search-input').addEventListener('focusin', e =>
-    $('search-list').classList.remove('hidden')
-  );
+  $('search-input').addEventListener('focusin', e => createListFor(e.target.value));
 
-  $('svg-wrapper').addEventListener('click', e =>
-    $('search-list').classList.add('hidden')
-  );
+  $('svg-wrapper').addEventListener('click', e => clearList());
 
-  $('search-input').addEventListener('input', e => {
-    closeAuto($('search-list'));
-    if (e.target.value)
-      Object.values(data).every(doPerson($('search-list'), e.target));
-  });
-
-  function doPerson(list, { value }) {
-    const isNum = !isNaN(value);
-
-    return function({ id, name }) {
-      const [left, paren] = isNum ? [id, name] : [name, id];
-      const index = left.toLowerCase().indexOf(value.toLowerCase());
-      if (index === -1 || (isNum && index !== 0)) return true;
-
-      const text = `${left} (${paren})`.replace(
-        left.slice(index, index + value.length),
-        '<b>$&</b>'
-      );
-      addToList(list, id, text);
-
-      return list.children.length !== 10;
-    };
-  }
+  $('search-input').addEventListener('input', e => createListFor(e.target.value));
 });
 
 function withData(json) {
-  return function updateData(id) {
+  return function getTreeFor(id) {
     const bigLine = [...bigLineGenerator(id)];
     const root = json[id].big === '' ? id : bigLine[bigLine.length - 1].id;
-    return [
-      [...littleTreeGenerator(root)],
-      [...littleTreeGenerator(id)].concat(bigLine)
-    ];
+    return {
+      treeData: [...littleTreeGenerator(root)],
+      highlight: [...littleTreeGenerator(id)].concat(bigLine)
+    };
   };
 
   function* littleTreeGenerator(id) {
@@ -99,7 +89,7 @@ function withData(json) {
   }
 }
 
-function draw() {
+function setupDraw(getTreeFor) {
   console.log('once');
 
   const NODE_WIDTH = 150,
@@ -184,7 +174,9 @@ function draw() {
 
   const tree = d3.tree().nodeSize([NODE_HEIGHT + 10, NODE_WIDTH + 25]);
 
-  return function redraw(updateData, [treeData, line], id) {
+  return function draw(updateAndDraw, id) {
+    const { treeData, highlight } = getTreeFor(id);
+
     // used to find min/max y nodes
     let minNodeY = 0;
     let maxNodeY = 0;
@@ -219,12 +211,12 @@ function draw() {
               return `translate(${d.y},${d.x})`;
             })
             .on('click', function(d, _) {
-              if (!d3.select(this).classed('selected')) updateData(d.id);
+              if (!d3.select(this).classed('selected')) updateAndDraw(d.id);
             })
-            .call(setClass, line, id)
+            .call(setClass, highlight, id)
             .call(createNode)
             .call(fadeIn),
-        update => update.call(setClass, line, id),
+        update => update.call(setClass, highlight, id),
         exit => exit.call(fadeOut)
       );
 
