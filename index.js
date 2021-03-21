@@ -110,9 +110,7 @@ function setupDraw(getTreeFor) {
     .zoom()
     .scaleExtent([0.5, 1])
     .translateExtent([[-100, svgheight / -2], [svgwidth - 100, svgheight / 2]])
-    .on('zoom', () => {
-      g.attr('transform', d3.event.transform);
-    });
+    .on("zoom", (event) => g.attr("transform", event.transform));
   svg.call(zoom).call(zoom.translateTo, 100, svgheight / 2);
 
   const fadeOut = exit =>
@@ -212,9 +210,7 @@ function setupDraw(getTreeFor) {
 
               return `translate(${d.y},${d.x})`;
             })
-            .on('click', function(d, _) {
-              if (!d3.select(this).classed('selected')) updateAndDraw(d.id);
-            })
+            .on("click", (_event, d) => updateAndDraw(d.id))
             .call(setClass, highlight, id)
             .call(createNode)
             .call(fadeIn),
