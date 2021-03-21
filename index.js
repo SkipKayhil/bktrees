@@ -180,6 +180,7 @@ function setupDraw(getTreeFor) {
     // used to find min/max y nodes
     let minNodeY = 0;
     let maxNodeY = 0;
+    let maxNodeX = -1;
 
     console.log('===DRAW CALLED===');
 
@@ -205,6 +206,7 @@ function setupDraw(getTreeFor) {
           enter
             .append('g')
             .attr('transform', d => {
+              maxNodeX = Math.max(d.y, maxNodeX);
               minNodeY = Math.min(d.x, minNodeY);
               maxNodeY = Math.max(d.x, maxNodeY);
 
@@ -220,30 +222,20 @@ function setupDraw(getTreeFor) {
         exit => exit.call(fadeOut)
       );
 
-    // Re enable calling setTranslateExtent
-    bg.on('mousedown.te', () => setTranslateExtent(minNodeY, maxNodeY));
-    bg.on('touchstart.te', () => setTranslateExtent(minNodeY, maxNodeY));
-
     console.log(minNodeY, maxNodeY);
     console.log(g.node().getBBox().height, g.node().getBBox().width);
 
-    function setTranslateExtent(minNodeY, maxNodeY) {
-      const gwidth = g.node().getBBox().width;
-
+    if (maxNodeX > -1) {
       zoom.translateExtent([
         [
           -100, // the root node has pos 0,0 so the minimum X will always be -100
           Math.min(minNodeY - 50, svgheight / -2)
         ],
         [
-          Math.max(svgwidth - 100, gwidth - 50),
+          Math.max(svgwidth - 100, maxNodeX + 100),
           Math.max(maxNodeY + 50, svgheight / 2)
         ]
       ]);
-
-      // Optimization to only update translateExtent after redraw
-      bg.on('mousedown.te', () => {});
-      bg.on('touchstart.te', () => {});
     }
   };
 }
