@@ -44,6 +44,11 @@ input {
   white-space: nowrap; */
 }
 
+#searchbox > svg {
+  color: black;
+  width: 1.5rem;
+}
+
 .node:not(.selected) {
   /* font-size: 15px; */
   cursor: pointer;

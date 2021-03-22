@@ -95,15 +95,10 @@ function setupDraw(getTreeFor) {
   const NODE_WIDTH = 150,
     NODE_HEIGHT = 50;
 
-  const svg = d3.select('svg');
+  const svg = d3.select('#svg-wrapper');
   const svgwidth = parseInt(svg.style('width'));
   const svgheight = parseInt(svg.style('height'));
-  // the blank background is a hack to call setTranslateEvent on mousedown
-  const bg = svg
-    .append('rect')
-    .attr('class', 'bg')
-    .attr('width', svgwidth)
-    .attr('height', svgheight);
+
   const g = svg.append('g').attr('id', 'g');
 
   const zoom = d3
